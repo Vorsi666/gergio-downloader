@@ -2,7 +2,8 @@ import { useCallback, useState } from "react";
 import { ArrowDown, Gauge, ShieldCheck, Zap } from "lucide-react";
 import Backdrop, { PaletteBar } from "./components/Backdrop";
 import DownloadPanel from "./components/DownloadPanel";
-import { detectPlatform, resolveMedia, PLATFORMS, type MediaResult } from "./lib/media";
+import { detectPlatform, PLATFORMS, type MediaResult } from "./lib/media";
+import { resolveWithFallback } from "./lib/api";
 
 type Phase = "idle" | "resolving" | "done" | "error";
 
@@ -18,16 +19,19 @@ export default function App() {
   const [result, setResult] = useState<MediaResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingLabel, setPendingLabel] = useState<string | null>(null);
+  const [backend, setBackend] = useState<"vercel" | "remote" | "browser" | null>(null);
 
   const handleSubmit = useCallback(async (raw: string) => {
     setPhase("resolving");
     setResult(null);
     setError(null);
+    setBackend(null);
     setPendingLabel(detectPlatform(raw).meta.name);
 
     try {
-      const media = await resolveMedia(raw);
+      const { result: media, via } = await resolveWithFallback(raw);
       setResult(media);
+      setBackend(via);
       setPhase("done");
     } catch (e) {
       const msg =
@@ -151,6 +155,7 @@ export default function App() {
               result={result}
               phase={phase}
               error={error}
+              backend={backend}
               onSubmit={handleSubmit}
               onReset={reset}
             />

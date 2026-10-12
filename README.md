@@ -1,71 +1,102 @@
 # Gergio Downloader
 
 Website video downloader tanpa watermark untuk beberapa platform media sosial.
-Dibangun dengan React + TypeScript + Vite + Tailwind CSS v4.
+React + TypeScript + Vite + Tailwind CSS v4, dengan API serverless opsional.
 
-## Fitur
+## Arsitektur: jalan di mana saja
 
-- Tempel satu tautan, dapatkan opsi unduhan
-- Resolver aktif: **TikTok**, **X / Twitter**, **Instagram**, **YouTube**
-- Placeholder untuk platform yang segera datang: Facebook, Threads, Pinterest, LinkedIn
-- Sepenuhnya berjalan di browser — tautan tidak dikirim ke server mana pun
-- Antarmuka bilingual-friendly, responsif dari 320px
+Build yang sama berjalan di dua host, dan **tidak ada backend yang wajib hidup**:
 
-## Menjalankan secara lokal
+```
+                    ┌─ 1. /api/resolve  (Vercel)  ─┐
+tempel tautan ──────┤                               ├─→ kartu hasil
+                    └─ 2. resolver di browser  ────┘
+                          (selalu ada, nol backend)
+```
+
+| Deploy | Resolve | Unduh | Catatan |
+|---|---|---|---|
+| **Vercel** | serverless | streaming via proxy | memori datar, file besar aman |
+| **GitHub Pages** | browser | blob di memory | 100% gratis, tanpa server |
+
+Di GitHub Pages, `/api/*` membalas 404 dalam <1 detik dan aplikasi diam-diam
+jatuh ke resolver browser — tanpa error, tanpa konfigurasi.
+
+## Menjalankan lokal
 
 ```bash
 npm install
-npm run dev      # http://localhost:5180
+npm run dev          # situs di http://localhost:5180
+
+# uji serverless functions tanpa deploy
+npx tsx scripts/test-api.mjs   # http://127.0.0.1:5199/api/resolve
 ```
 
-## Build produksi
+## Endpoint
 
-```bash
-npm run build    # output ke dist/
-npm run preview  # cek hasil build
+### `GET /api/resolve?url=<post-url>`
+
+```jsonc
+{
+  "platformName": "TikTok",
+  "title": "...",
+  "author": "@scout2015",
+  "thumbnail": "https://...",
+  "options": [
+    { "label": "HD · Tanpa Watermark", "detail": "1.9 MB · video bersih",
+      "kind": "direct", "url": "https://cdn..." },
+    { "label": "Klip asli di TikTok", "detail": "Tautan post asal",
+      "kind": "external", "url": "https://..." }
+  ]
+}
 ```
+
+### `GET /api/download?url=<cdn-url>&name=<file>.mp4`
+
+Men-stream video melalui server. Karena responsnya same-origin,
+`Content-Disposition` berlaku dan browser langsung menyimpan ke disk.
+
+Host tujuan dibatasi daftar putih (`tiktokcdn-*.com`, `twimg.com`, …) supaya
+endpoint ini tidak jadi open relay untuk URL sembarang.
 
 ## Deploy
 
-### GitHub Pages (via Actions)
+### Vercel (dengan API)
 
-Workflow di `.github/workflows/deploy.yml` otomatis deploy setiap push ke `main`.
+```bash
+npx vercel          # preview
+npx vercel --prod   # production
+```
 
-1. Buat repo baru di GitHub (misal `gergio-downloader`), **jangan** centang "Add README".
-2. Push kode ini:
+Atau connect repo di dashboard: **https://vercel.com/new** → import repo →
+framework autodetect `vite` → Deploy. Tidak ada env var yang perlu diisi.
 
-   ```bash
-   git remote add origin https://github.com/<user>/gergio-downloader.git
-   git push -u origin main
-   ```
+### GitHub Pages (tanpa API)
 
-3. Di repo: **Settings → Pages → Source → Deploy from a branch → `main` / `root` / `/ (root)`**
+Workflow `.github/workflows/deploy.yml` deploy otomatis setiap push ke `main`.
+Aktifkan di **Settings → Pages → Deploy from a branch → `main` / `root`**.
 
-Situsnya akan tayang di `https://<user>.github.io/gergio-downloader/`.
+`vite.config.ts` memakai `base: "./"` (path relatif) supaya build jalan di subpath
+repo tanpa perlu tahu nama repo.
 
-`vite.config.ts` memakai `base: "./"` (path relatif), jadi build tetap jalan di
-subpath repository tanpa perlu ubah konfigurasi.
+## Strategi resolver
 
-## Cara kerja resolver
+Dua lapis, dicoba berurutan:
 
-Semua permintaan keluar dari browser ke endpoint publik — tidak ada API key,
-tidak ada backend, tidak ada file yang diunggah ke server.
+1. **tikwm** — API publik, CORS `*`, tanpa key. Mengembalikan `hdplay`/`play`
+   (tanpa watermark) dan `wmplay` (berwatermark). Hanya paham TikTok.
+2. **Fallback native** — oEmbed TikTok, syndication X/Twitter, embed YouTube,
+   metadata Instagram.
 
-| Platform | Metode | Hasil |
-|---|---|---|
-| TikTok | oEmbed publik + parse halaman untuk `play_addr` | Tautan MP4 bersih bila tersedia |
-| X / Twitter | endpoint `cdn.syndication.twimg.com` | Semua varian MP4 diurutkan dari bitrate tertinggi |
-| Instagram | oEmbed publik | Metadata + tautan asli (IG memblokir unduhan dari luar app) |
-| YouTube | ekstraksi video ID | Pemutar embed + catatan bahwa YT tak pernah menyediakan berkas tanpa watermark |
+Kalau dua-duanya gagal, UI menampilkan hasil yang jujur plus tautan ke sumber —
+bukan tombol unduh yang diam-diam tidak berfungsi.
 
-Kalau sebuah platform membatasi akses, kartu hasil menampilkan catatan jujur
-menggantikan klaim yang berlebihan tentang apa yang bisa dan tidak bisa dilakukan — bukan
-pura-pura menampilkan tombol unduh yang tidak akan bekerja.
+Menambah resolver baru cukup isi `REMOTE_RESOLVERS` di `src/lib/api.ts`.
 
 ## Catatan
 
 Unduh hanya konten yang Anda miliki haknya atau yang diizinkan untuk diunduh.
-Mematuhi ketentuan layanan dan hak cipta platform masing-masing.
+Mematuhi ketentuan layanan dan hak cipta masing-masing platform.
 
 ## Lisensi
 

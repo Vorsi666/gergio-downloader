@@ -11,6 +11,7 @@ import {
   X
 } from "lucide-react";
 import type { MediaResult } from "../lib/media";
+import { buildDownloadUrl, hasDownloadProxy } from "../lib/api";
 
 type Phase = "idle" | "resolving" | "done" | "error";
 
@@ -18,6 +19,7 @@ interface Props {
   result: MediaResult | null;
   phase: Phase;
   error: string | null;
+  backend: "vercel" | "remote" | "browser" | null;
   onSubmit: (value: string) => void;
   onReset: () => void;
 }
@@ -34,7 +36,14 @@ function fileNameFor(label: string, author: string): string {
   return `${base || "video"}.mp4`;
 }
 
-export default function DownloadPanel({ result, phase, error, onSubmit, onReset }: Props) {
+export default function DownloadPanel({
+  result,
+  phase,
+  error,
+  backend,
+  onSubmit,
+  onReset
+}: Props) {
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const statusRef = useRef<HTMLParagraphElement>(null);
@@ -127,7 +136,14 @@ export default function DownloadPanel({ result, phase, error, onSubmit, onReset 
         )}
       </button>
 
-      <StatusLine phase={phase} error={error} result={result} statusRef={statusRef} onReset={onReset} />
+      <StatusLine
+        phase={phase}
+        error={error}
+        result={result}
+        backend={backend}
+        statusRef={statusRef}
+        onReset={onReset}
+      />
 
       {result && phase === "done" && <ResultBody result={result} />}
     </div>
@@ -138,12 +154,14 @@ function StatusLine({
   phase,
   error,
   result,
+  backend,
   statusRef,
   onReset
 }: {
   phase: Phase;
   error: string | null;
   result: MediaResult | null;
+  backend: "vercel" | "remote" | "browser" | null;
   statusRef: React.RefObject<HTMLParagraphElement | null>;
   onReset: () => void;
 }) {
@@ -176,7 +194,16 @@ function StatusLine({
           <Check size={15} className="mt-0.5 shrink-0 text-emerald-300" />
           <span className="min-w-0 flex-1">
             <b className="font-bold text-white">{result.platformName}</b> terdeteksi —{" "}
-            {result.options.length} opsi unduhan siap.
+            {result.options.length} opsi unduhan siap
+            {backend && (
+              <>
+                {" · "}
+                <span className="font-mono text-[11px] text-white/55">
+                  {backend === "browser" ? "via browser" : `via ${backend}`}
+                </span>
+              </>
+            )}
+            .
           </span>
           <button
             type="button"
@@ -214,12 +241,14 @@ function ResultBody({ result }: { result: MediaResult }) {
   const linkOptions = result.options.filter((o) => o.kind !== "direct");
 
   /**
-   * Fetch the video ourselves, then hand the browser a local blob URL.
+   * Save the file, using the best path available.
    *
-   * A plain `download` attribute is ignored for cross-origin URLs, which is why
-   * the old markup opened a tab instead of saving anything. The CDN answers with
-   * `access-control-allow-origin: *`, so the fetch is readable here and the blob
-   * URL we mint is same-origin — the download attribute finally applies.
+   *  - Proxy present (Vercel): stream straight through /api/download. The
+   *    response is same-origin so Content-Disposition applies, the file saves
+   *    itself, and memory stays flat regardless of file size.
+   *  - No proxy (GitHub Pages): fetch the CDN ourselves into a blob and hand the
+   *    browser a same-origin object URL. Loads the whole file into tab memory,
+   *    which is the one trade-off of running with no backend at all.
    */
   const download = useCallback(async () => {
     const target = directOptions[0];
@@ -228,8 +257,25 @@ function ResultBody({ result }: { result: MediaResult }) {
     setState("loading");
     setMessage("Mengunduh berkas…");
 
+    const fileName = fileNameFor(target.label, result.author);
+    const proxied = await hasDownloadProxy();
+
+    if (proxied) {
+      // Navigating to a Content-Disposition attachment is enough; the browser
+      // streams it to disk and never holds it in memory.
+      const a = document.createElement("a");
+      a.href = buildDownloadUrl(target.url, fileName, true);
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setState("done");
+      setMessage("Memulai unduhan · streaming via server");
+      return;
+    }
+
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 120000);
+    const timer = setTimeout(() => controller.abort(), 180000);
     try {
       const res = await fetch(target.url, { signal: controller.signal });
       if (!res.ok) throw new Error(`Server menolak (HTTP ${res.status})`);
@@ -243,7 +289,7 @@ function ResultBody({ result }: { result: MediaResult }) {
 
       const a = document.createElement("a");
       a.href = url;
-      a.download = fileNameFor(target.label, result.author);
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       a.remove();
