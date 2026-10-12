@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+/* ── Palette lifted straight from the Starry Night reference ───────────────
+   #0C1446 midnight navy · #2B5C92 midnight blue · #B3CDE0 pale steel · #FFFFFF
+   Soft indigo is the hue that sits between #2B5C92 and #B3CDE0 in the artwork. */
+@theme {
+  --font-display: "Archivo", "Helvetica Neue", sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "Courier New", monospace;
+
+  --color-night-900: #0c1446;
+  --color-night-800: #16225a;
+  --color-night-700: #1f2f6b;
+
+  --color-midnight-700: #24507f;
+  --color-midnight-600: #2b5c92;
+  --color-midnight-500: #3e78b4;
+  --color-midnight-400: #5d94c9;
+
+  --color-steel-200: #d6e4ef;
+  --color-steel-300: #b3cde0;
+  --color-steel-400: #8fb3cf;
+
+  --color-indigo-300: #9aa8e0;
+  --color-indigo-400: #7b8fd4;
+  --color-indigo-500: #6375c4;
+
+  --color-paper: #ffffff;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-night-900);
+    background-color: var(--color-midnight-500);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection {
+    background: var(--color-night-900);
+    color: #fff;
+  }
+}
+
+@layer components {
+  /* Deep field: light at the top, indigo mid, navy floor.
+     The display type sits on the light band so navy ink stays readable. */
+  .starfield {
+    background:
+      radial-gradient(62% 44% at 86% 2%, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0) 60%),
+      radial-gradient(48% 36% at 10% 6%, rgba(179, 205, 224, 0.8) 0%, rgba(179, 205, 224, 0) 62%),
+      radial-gradient(54% 40% at 52% 26%, rgba(123, 143, 212, 0.55) 0%, rgba(123, 143, 212, 0) 68%),
+      radial-gradient(40% 30% at 88% 74%, rgba(99, 117, 196, 0.5) 0%, rgba(99, 117, 196, 0) 70%),
+      linear-gradient(177deg, #7ba3cd 0%, #5b8cc0 16%, #3a6ea9 34%, #24507f 54%, #16225a 76%, #0c1446 100%);
+  }
+
+  /* Graph-paper grid from the reference */
+  .grid-lines {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.14) 1px, transparent 1px),
+      linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+    background-size:
+      160px 160px,
+      160px 160px,
+      32px 32px,
+      32px 32px;
+  }
+
+  .grain {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.16;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  }
+
+  /* The frosted pill: navy on the left running to white on the right */
+  .frosted-pill {
+    background: linear-gradient(
+      100deg,
+      rgba(12, 20, 70, 0.72) 0%,
+      rgba(36, 80, 127, 0.46) 26%,
+      rgba(179, 205, 224, 0.3) 55%,
+      rgba(255, 255, 255, 0.52) 82%,
+      rgba(255, 255, 255, 0.3) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(22px) saturate(150%);
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
+  }
+
+  .frost-card {
+    background: linear-gradient(155deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+  }
+
+  .display {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 0.92;
+    color: var(--color-night-900);
+  }
+
+  .rise {
+    animation: rise 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .drift {
+    animation: drift 14s ease-in-out infinite;
+  }
+  .twinkle {
+    animation: twinkle 4.5s ease-in-out infinite;
+  }
+  .sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(115deg, rgba(255, 255, 255, 0) 38%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0) 62%);
+    transform: translateX(-130%);
+    transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .sheen:hover::after {
+    transform: translateX(130%);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-18px, 10px, 0);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .drift,
+  .twinkle {
+    animation: none;
+  }
+}
