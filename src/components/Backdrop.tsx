@@ -94,17 +94,17 @@ export function PaletteBar() {
     { hex: "#FFFFFF", label: "Paper" }
   ];
   return (
-    <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+    <ul className="grid grid-cols-2 gap-x-4 gap-y-2.5 @[26rem]:flex @[26rem]:flex-wrap @[26rem]:items-center @[26rem]:gap-x-6">
       {swatches.map((s) => (
-        <span key={s.hex} className="flex items-center gap-2">
+        <li key={s.hex} className="flex min-w-0 items-center gap-2">
           <span
-            className="h-3.5 w-3.5 rounded-[3px] border border-white/55 shadow-[0_1px_6px_rgba(0,0,0,.25)]"
+            className="h-3.5 w-3.5 shrink-0 rounded-[3px] border border-white/55 shadow-[0_1px_6px_rgba(0,0,0,.25)]"
             style={{ background: s.hex }}
             aria-hidden
           />
-          <span className="font-mono text-[11.5px] font-medium text-white/85">{s.hex}</span>
-        </span>
+          <span className="truncate font-mono text-[11.5px] font-medium text-white/85">{s.hex}</span>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

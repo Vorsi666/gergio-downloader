@@ -43,6 +43,21 @@
     background: var(--color-night-900);
     color: #fff;
   }
+
+  /* Never let a long title or URL widen the page on a phone. */
+  img,
+  iframe,
+  video {
+    max-width: 100%;
+  }
+  h1,
+  h2,
+  h3,
+  p,
+  li,
+  span {
+    overflow-wrap: break-word;
+  }
 }
 
 @layer components {
@@ -84,22 +99,23 @@
   .frosted-pill {
     background: linear-gradient(
       100deg,
-      rgba(12, 20, 70, 0.72) 0%,
-      rgba(36, 80, 127, 0.46) 26%,
-      rgba(179, 205, 224, 0.3) 55%,
-      rgba(255, 255, 255, 0.52) 82%,
-      rgba(255, 255, 255, 0.3) 100%
+      rgba(12, 20, 70, 0.62) 0%,
+      rgba(22, 34, 90, 0.48) 26%,
+      rgba(99, 117, 196, 0.38) 55%,
+      rgba(179, 205, 224, 0.34) 82%,
+      rgba(255, 255, 255, 0.26) 100%
     );
-    border: 1px solid rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     backdrop-filter: blur(22px) saturate(150%);
     -webkit-backdrop-filter: blur(22px) saturate(150%);
   }
 
   .frost-card {
-    background: linear-gradient(155deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.24);
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    background: linear-gradient(155deg, rgba(22, 34, 90, 0.62) 0%, rgba(12, 20, 70, 0.52) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    backdrop-filter: blur(22px) saturate(150%);
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
+    box-shadow: 0 24px 50px -28px rgba(4, 8, 30, 0.7);
   }
 
   .display {
