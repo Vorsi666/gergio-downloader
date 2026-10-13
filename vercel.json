@@ -1,12 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run build",
+  "buildCommand": "pip install -r backend/requirements.txt && npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
   "functions": {
-    "api/resolve.ts": { "memory": 1024, "maxDuration": 30 },
-    "api/download.ts": { "memory": 1024, "maxDuration": 30 },
-    "api/phantomResolve.ts": { "memory": 1024, "maxDuration": 45 }
+    "api/resolve.py": { "runtime": "python3.11" },
+    "api/download.py": { "runtime": "python3.11" }
   },
   "rewrites": [
     {
