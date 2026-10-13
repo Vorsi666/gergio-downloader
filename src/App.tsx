@@ -1,5 +1,19 @@
 import { useCallback, useState } from "react";
-import { ArrowDown, Gauge, ShieldCheck, Zap } from "lucide-react";
+import {
+  ArrowDown,
+  Gauge,
+  ShieldCheck,
+  Zap,
+  Loader2,
+  Check,
+  AlertCircle,
+  ClipboardPaste,
+  ExternalLink,
+  Play,
+  ArrowDownToLine,
+  Sparkle,
+} from "lucide-react";
+import { useEffect } from "react";
 import Backdrop, { PaletteBar } from "./components/Backdrop";
 import DownloadPanel from "./components/DownloadPanel";
 import { detectPlatform, PLATFORMS, type MediaResult } from "./lib/media";
@@ -15,21 +29,23 @@ const SAMPLE_LINKS = [
 ];
 
 export default function App() {
+  const [input, setInput] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<MediaResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingLabel, setPendingLabel] = useState<string | null>(null);
   const [backend, setBackend] = useState<"vercel" | "remote" | "browser" | null>(null);
 
-  const handleSubmit = useCallback(async (raw: string) => {
+  const handleSubmit = useCallback(async () => {
+    if (!input.trim()) return;
     setPhase("resolving");
     setResult(null);
     setError(null);
     setBackend(null);
-    setPendingLabel(detectPlatform(raw).meta.name);
+    setPendingLabel(detectPlatform(input).meta.name);
 
     try {
-      const { result: media, via } = await resolveWithFallback(raw);
+      const { result: media, via } = await resolveWithFallback(input);
       setResult(media);
       setBackend(via);
       setPhase("done");
@@ -45,9 +61,10 @@ export default function App() {
     } finally {
       setPendingLabel(null);
     }
-  }, []);
+  }, [input]);
 
   const reset = useCallback(() => {
+    setInput("");
     setPhase("idle");
     setResult(null);
     setError(null);
@@ -59,193 +76,172 @@ export default function App() {
   return (
     <div className="min-h-dvh text-white">
       <Backdrop />
-
-      {/* Masthead — badge left, status right, like the reference's caption line */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 pt-7 @[30rem]:px-8">
-        <div className="rise flex items-center gap-2.5" style={{ animationDelay: "0.05s" }}>
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/45 bg-white/20 backdrop-blur-md">
-            <ArrowDown size={18} strokeWidth={3} className="text-white" />
-          </span>
-          <span className="text-[15px] font-extrabold tracking-tight text-night-900">Gergio</span>
-        </div>
-        <span
-          className="rise rounded-full border border-night-900/15 bg-night-900/10 px-3 py-1 font-mono text-[10.5px] font-medium uppercase tracking-[0.18em] text-night-900/70 backdrop-blur-md"
-          style={{ animationDelay: "0.12s" }}
-        >
-          v1.0 · Gratis
-        </span>
-      </header>
-
-      <main className="@container mx-auto max-w-6xl px-5 pb-20 @[30rem]:px-8">
-        {/* Hero: caption above, heavy display wordmark, panel breaking the grid right */}
-        <section className="grid gap-8 pt-10 sm:gap-10 sm:pt-14 @[58rem]:grid-cols-12 @[58rem]:items-start @[58rem]:gap-10 @[58rem]:pt-20">
-          <div className="@[58rem]:col-span-7 @[58rem]:pt-6">
-            <p
-              className="rise max-w-[24rem] text-[13.5px] font-semibold leading-relaxed text-night-900/75"
-              style={{ animationDelay: "0.16s" }}
-            >
-              Midnight blue blending into soft indigo and scattered with tiny star-like
-              sparks — video dari mana pun, tanpa watermark, dalam satu tautan.
-            </p>
-
-            <h1 className="display mt-6 select-none sm:mt-7">
-              <span
-                className="rise block text-[clamp(2.75rem,13.5vw,6rem)] leading-[0.86] @[58rem]:text-[clamp(3rem,7.6cqw,6.25rem)]"
-                style={{ animationDelay: "0.24s" }}
-              >
-                Gergio
-              </span>
-              <span
-                className="rise block text-[clamp(2.75rem,13.5vw,6rem)] leading-[0.86] @[58rem]:text-[clamp(3rem,7.6cqw,6.25rem)]"
-                style={{ animationDelay: "0.32s" }}
-              >
-                Downloader
-              </span>
-            </h1>
-
-            {/* The frosted pill as a statement bar, echoing the reference's rounded slab */}
-            <div
-              className="frosted-pill rise mt-7 flex max-w-[34rem] flex-col gap-3 rounded-[26px] px-5 py-4 @[26rem]:flex-row @[26rem]:items-center @[26rem]:justify-between sm:mt-9"
-              style={{ animationDelay: "0.42s" }}
-            >
-              <p className="text-[13px] leading-relaxed text-white/85">
-                Tempel satu tautan, dapatkan berkas video{" "}
-                <b className="font-extrabold text-white">bersih tanpa watermark</b>. Tidak ada
-                login, tidak ada upload.
-              </p>
-              <a
-                href="#unduh"
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-white px-5 py-2.5 text-[13px] font-extrabold text-night-900 transition-transform duration-300 hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-              >
-                <ArrowDown size={15} strokeWidth={3} />
-                Mulai
-              </a>
+      <main className="mx-auto max-w-2xl px-4 pt-20">
+        <header className="flex items-center justify-between space-x-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
+              <Zap size={16} strokeWidth={2} className="text-white" />
             </div>
-
-            {/* Platform row — supported get solid chips, the rest sit as muted
-                placeholders. Navy-on-light for the label since the hero sits on the
-                pale band; the chips themselves are frosted so they read on any ground. */}
-            <div className="rise mt-7 sm:mt-8" style={{ animationDelay: "0.5s" }}>
-              <p className="text-[10.5px] font-bold uppercase tracking-[0.22em] text-night-900/55">
-                Platform aktif
-              </p>
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                {supported.map((p) => (
-                  <span
-                    key={p.id}
-                    className="rounded-full border border-white/45 bg-white/18 px-3.5 py-1.5 text-[12.5px] font-bold text-white backdrop-blur-md transition-transform duration-300 hover:-translate-y-0.5"
-                  >
-                    {p.name}
-                  </span>
-                ))}
-                {coming.map((p) => (
-                  <span
-                    key={p.id}
-                    className="rounded-full border border-dashed border-night-900/25 px-3.5 py-1.5 text-[12.5px] font-semibold text-night-900/45"
-                  >
-                    {p.name}
-                  </span>
-                ))}
-              </div>
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold tracking-tight">Gergio Downloader</h1>
+              <p className="text-sm text-white/60">Unduh video tanpa watermark, langsung dari sumber</p>
             </div>
           </div>
+          <div className="text-xs text-white/40">
+            v1.0 · Gratis
+          </div>
+        </header>
 
-          <div id="unduh" className="rise scroll-mt-6 @[58rem]:col-span-5 @[58rem]:scroll-mt-8 @[58rem]:pt-16" style={{ animationDelay: "0.38s" }}>
-            <DownloadPanel
-              result={result}
-              phase={phase}
-              error={error}
-              backend={backend}
-              onSubmit={handleSubmit}
-              onReset={reset}
+        <div className="space-y-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <input
+              type="url"
+              inputMode="url"
+              autoComplete="off"
+              spellCheck={false}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSubmit();
+              }}
+              className="flex-1 min-w-0 rounded-xl bg-white/10 backdrop-blur border border-white/20 px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30 transition-colors"
+              placeholder="https://vt.tiktok.com/xxxxx"
+              aria-label="Tautan video media sosial"
             />
+            <button
+              onClick={handleSubmit}
+              disabled={phase === "resolving"}
+              className="shrink-0 rounded-md px-4 py-2 bg-white text-night-900 font-medium transition-colors hover:bg-white/20 disabled:opacity-50"
+            >
+              {phase === "resolving" ? (
+                <>
+                  <Loader2 size={16} className="mr-2 animate-spin" />
+                  Memproses…
+                </>
+              ) : (
+                "Ambil Video"
+              )}
+            </button>
+            <button
+              onClick={() => {
+                navigator.clipboard.readText().then(text => {
+                  if (text) setInput(text.trim());
+                }).catch(() => {
+                  inputRef.current?.focus();
+                });
+              }}
+              title="Tempel dari clipboard"
+              aria-label="Tempel dari clipboard"
+              className="shrink-0 rounded-md px-2 py-2 bg-white/20 text-white/70 hover:bg-white/30 transition-colors"
+            >
+              <ClipboardPaste size={14} />
+            </button>
           </div>
-        </section>
+
+          {phase === "resolving" && (
+            <p className="text-sm text-white/60 flex items-center gap-2">
+              <Loader2 size={14} className="mr-2 animate-spin" />
+              Sedang memproses tautan…
+            </p>
+          )}
+
+          {phase === "done" && result && (
+            <>
+              <p className="text-sm text-white/60">
+                <span className="font-medium">{result.platformName}</span> terdeteksi — siap diunduh.
+              </p>
+              <DownloadPanel
+                result={result}
+                phase="done"
+                error={null}
+                backend={backend}
+                onSubmit={handleSubmit}
+                onReset={reset}
+              />
+            </>
+          )}
+
+          {phase === "error" && error && (
+            <p className="text-sm text-white/60 flex items-center gap-2">
+              <AlertCircle size={14} className="mr-2" />
+              {error}
+            </p>
+          )}
+        </div>
 
         {/* Sample links */}
-        <section className="rise mt-10 max-w-[34rem] sm:mt-14" style={{ animationDelay: "0.58s" }}>
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.22em] text-white/60">
+        <div className="mt-6">
+          <p className="text-sm font-medium text-white/60 uppercase tracking-wider">
             Contoh tautan
           </p>
-          <div className="mt-2.5 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mt-2">
             {SAMPLE_LINKS.map((s) => (
               <button
                 key={s.label}
-                type="button"
-                onClick={() => void handleSubmit(s.href)}
+                onClick={() => {
+                  setInput(s.href);
+                  handleSubmit();
+                }}
                 disabled={phase === "resolving"}
-                className="rounded-full border border-white/30 bg-white/10 px-3.5 py-2 font-mono text-[11.5px] text-white/85 backdrop-blur-md transition-colors hover:bg-white/22 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                className="rounded-full border border-white/30 bg-white/10 px-3.5 py-2 font-mono text-[11.5px] text-white/85 backdrop-blur-md transition-colors hover:bg-white/22 disabled:opacity-50 focus-visible:outline-2 focus-visible:offset-2 focus-visible:outline-white"
               >
                 {s.label}
               </button>
             ))}
           </div>
-        </section>
+        </div>
 
-        {/* Feature trio — staggered vertical offsets break the grid on wide screens,
-            stacked flat on mobile where a diagonal offset would just look broken */}
-        <section className="mt-12 grid gap-3 sm:mt-20 sm:gap-4 @[30rem]:grid-cols-3">
-          <FeatureCard
-            delay={0.64}
-            lift="sm:-translate-y-3"
-            icon={<Zap size={17} strokeWidth={2.5} />}
-            title="Instan"
-            body="Metadata diambil dalam hitungan detik setelah tautan ditempel."
-          />
-          <FeatureCard
-            delay={0.72}
-            lift="sm:translate-y-4"
-            icon={<ShieldCheck size={17} strokeWidth={2.5} />}
-            title="Tanpa watermark"
-            body="Alamat video bersih dibaca langsung dari sumber aslinya, bukan rekaman layar."
-          />
-          <FeatureCard
-            delay={0.8}
-            lift="sm:-translate-y-1"
-            icon={<Gauge size={17} strokeWidth={2.5} />}
-            title="100% privat"
-            body="Berjalan penuh di browser. Tautan tidak pernah dikirim ke server kami."
-          />
-        </section>
+        {/* Feature trio */}
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <div className="frosted-card p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                <Zap size={14} strokeWidth={2} className="text-white" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-white">Instan</h3>
+                <p className="text-xs text-white/60">Metadata diambil dalam hitungan detik setelah tautan ditempel.</p>
+              </div>
+            </div>
+          </div>
+          <div className="frosted-card p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                <ShieldCheck size={14} strokeWidth={2} className="text-white" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-white">Tanpa watermark</h3>
+                <p className="text-xs text-white/60">Alamat video bersih dibaca langsung dari sumber aslinya, bukan rekaman layar.</p>
+              </div>
+            </div>
+          </div>
+          <div className="frosted-card p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                <Gauge size={14} strokeWidth={2} className="text-white" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-semibold text-white">100% privat</h3>
+                <p className="text-xs text-white/60">Berjalan penuh di browser. Tautan tidak pernah dikirim ke server kami.</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        {/* Palette strip from the reference's bottom band */}
-        <section className="rise mt-12 border-t border-white/22 pt-6 sm:mt-20 sm:pt-7" style={{ animationDelay: "0.86s" }}>
+        {/* Palette strip */}
+        <div className="mt-8">
           <PaletteBar />
-        </section>
+        </div>
       </main>
 
       <footer className="border-t border-white/20 bg-night-900/35 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-5 py-6 @[30rem]:flex-row @[30rem]:items-center @[30rem]:justify-between @[30rem]:px-8">
-          <p className="text-[11px] font-extrabold uppercase tracking-[0.2em]">Gergio Downloader</p>
-          <p className="text-[11px] text-white/60">
+        <div className="mx-auto max-w-2xl px-4 py-4 flex flex-col items-center sm:flex-row sm:justify-between">
+          <p className="text-xs font-extrabold uppercase tracking-wider">Gergio Downloader</p>
+          <p className="text-xs text-white/60">
             {pendingLabel ? `Memproses ${pendingLabel}…` : "Hanya untuk konten yang Anda miliki haknya."}
           </p>
         </div>
       </footer>
     </div>
-  );
-}
-
-function FeatureCard({
-  delay,
-  lift,
-  icon,
-  title,
-  body
-}: {
-  delay: number;
-  lift: string;
-  icon: React.ReactNode;
-  title: string;
-  body: string;
-}) {
-  return (
-    <article className={`rise frost-card rounded-[22px] p-5 ${lift}`} style={{ animationDelay: `${delay}s` }}>
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/35 bg-white/18">
-        {icon}
-      </span>
-      <h3 className="mt-3 text-[14px] font-extrabold">{title}</h3>
-      <p className="mt-1 text-[12.5px] leading-relaxed text-white/72">{body}</p>
-    </article>
   );
 }
